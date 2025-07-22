@@ -1,32 +1,50 @@
-# RV32Zfinx-FPU-Integration-Note
+# Lightweight FPU Integration via RV32Zfinx
+This project demonstrates how to enhance an RV32IM-based SoC with floating-point capability by integrating the Zurich CVFPU and enabling the RV32Zfinx extension.
+It aims to evaluate the benefits of lightweight FPU support for softmax computation in edge AI workloads, especially in resource-constrained environments.
 
-This repository documents the integration of the Zurich CVFPU into an in-house RV32IM SoC using the RV32Zfinx extension. The goal was to enable scalar floating-point computation with minimal area overhead by reusing the integer register file (`x0–x31`) as specified in the Zfinx ISA extension.
+# Motivation
+While implementing MobileBERT on a resource-limited IoT system, our team observed that the softmax function became a major performance bottleneck.
+The exponential component (exp(x)) is particularly expensive on RV32IM platforms without FPU.
+This project explores the potential of RV32Zfinx and CVFPU to accelerate softmax execution. I used Spike to benchmark performance, implemented CVFPU integration, and documented the results in this open-source, non-confidential report.
 
-## Motivation
+# Results
+- Benchmark configuration: 512 float32 inputs, range [0, 10)
+- Target platform: Spike simulator with RV32IMZf toolchain
+- Measured via: mcycle CSR
 
-Traditional RV32F requires a separate floating-point register file, complicating hardware and ABI support. RV32Zfinx allows reuse of integer registers, making it attractive for resource-constrained systems and enabling simpler toolchain support.
+|Configuration|	glibc expf() |	Optimized (Taylor3 + LUT)	| Speedup	Max Abs Error|
+|-------------|-------------|-------------|-------------|
+|RV32IM (no FPU)	  |1,265,689	|533,376	|57.86%	|0.0003|
+|RV32IMZf (with FPU)|	66,291	  |51,246  	|22.70%	|0.0003|
 
-## Project Scope
+# Observation
+- Enabling RV32Zf alone (without software optimization) reduces execution time by ~95%.
+- Software-side optimization (Taylor3 + LUT) offers ~23% additional improvement with RV32Zf.
+- From an instruction-accurate perspective (using Spike), RV32Zf significantly improves softmax performance.
 
-This integration involved:
-- Evaluating the potential of RV32Zf on an RV32IM pipeline using Spike
-- Validating CVFPU behavior through standalone testbenches
-- Integrating CVFPU into a 5-stage RV32IM pipeline using the Zfinx convention
-- Debugging decoder changes, pipeline hazards, and FCSR logic
-- Synthesizing the netlist and addressing backend timing issues
-- Fixing toolchain bugs related to `.bss.*` section initialization
+**Limitation:** Spike is a functional (ISA-level) simulator. It does not model pipeline stalls, cache behavior, or precise timing—thus cycle counts may differ from real hardware.
 
-## Key Features
+# Project Structure
+RV32Zfinx-FPU-Integration-Note/
+- spike_demo/
+  - src/       # Source code: algo.c, main.c, etc.
+  - run/       # Makefile and simulation outputs
+- doc/           # Full report (markdown) and concept slides
+- README.md      # This file
 
-- ✅ Full support for RV32Zfinx instruction groups
-- ✅ FCSR compatibility with Zicsr
-- ✅ Integration via handshaking protocol and FSM control
-- ✅ Hazard detection logic for FPU & CSR interlocks
-- ✅ Verified by riscv-tests and self-developed directed tests
+# Build & Run
+To compile and run the benchmark:
+```bash
+cd spike_demo/run
+make all                    # RV32IMZf (with FPU)
+make clean build_base run   # RV32IM baseline (no FPU)
+```
 
-## Repository Structure
-- /docs - Concept note (full integration report)
-- /spike
-  - /run - RTL simulation flow and testcase Makefiles
-  - /src - Integration source code: FSM, pipeline, CSR, CVFPU interface
-- /testbench - Standalone testbenches for CVFPU & instruction decoding
+# Documentation
+- Full technical report: doc/full-report.md
+- Concept overview slide: doc/cvfpu_integration_slide.pdf
+- RISC-V toolchain setup (Spike, pk, compiler): [Setup Guide (HackMD)](https://hackmd.io/Ouj3SnvZTQ-1iiaWfvpPMQ)
+
+# Reference
+- [CVFPU](https://github.com/openhwgroup/cvfpu) - Zurich Floating-Point Unit
+- [riscv-isa-sim (Spike)](https://github.com/riscv/riscv-isa-sim)
