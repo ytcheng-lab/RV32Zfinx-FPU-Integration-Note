@@ -12,6 +12,10 @@ I approached the integration in three phases:
 
 ## 2. CVFPU Design Overview and Parameterization
 
+<img src="cvfpu_overview.png" alt="cvfpu_overview" width="50%"/>
+
+[CVFPU github repo](https://github.com/openhwgroup/cvfpu) 
+
 CVFPU is a modular, highly configurable floating-point unit developed by ETH Zurich. I customized it to fit RV32Zfinx with the following key parameters:
 
 * `FLEN = 32` for RV32F scalar operation
@@ -26,6 +30,8 @@ CVFPU is a modular, highly configurable floating-point unit developed by ETH Zur
 ## 3. SoC Integration Highlights
 
 ### 3.1 RTL Reorganization and Test Framework
+
+![RV32IMZf_pipeline_overview](RV32IMZf_pipeline_overview.png)
 
 * Built test framework (Makefile-based)
 * Verified correctness with unit tests and riscv-tests (RVF subset)
@@ -56,6 +62,8 @@ To manage CVFPU latency and interface handshakes, an FSM was introduced:
 
 #### 3.2.3 FCSR: Zicsr-Compatible FCSR Implementation
 
+![fcsr_overview](fcsr_overview.png)
+
 To support floating-point control under Zfinx, I implemented fcsr as a standard CSR with full compatibility to the Zicsr extension. The fcsr CSR contains three fields:
 
 * `fflags`: exception flags (W1C style)
@@ -77,11 +85,13 @@ During decoder integration, multiple issues were resolved:
 
 `PipeRegs` and `PipeConfig` are parameters used to determine pipeline depth and the placement of registers inside the CVFPU. I experimented with multiple settings:
 
-* `BEFORE/1`: Registers placed before main pipeline stages (slack -2.05ns)
-* `INSIDE/1`: Registers distributed within main logic (slack -0.74ns)
-* `DISTRIBUTED/2`: Pipelining spread across stages (slack -0.72ns)
+* `BEFORE/1`: Registers placed before main pipeline stages
+* `INSIDE/1`: Registers distributed within main logic
+* `DISTRIBUTED/2`: Pipelining spread across stages
 
-I adopted `DISTRIBUTED/2`, which passed all direct tests (HELLO, ADDMUL).
+I adopted `DISTRIBUTED/2`, which passed all direct tests.
+> Note: Synthesis was performed using TSMC 65nm technology.
+For confidentiality, exact timing slack numbers have been removed (de-identified).
 
 **Linker Script Bug (Branch to Unknown):**
 
@@ -90,6 +100,9 @@ I adopted `DISTRIBUTED/2`, which passed all direct tests (HELLO, ADDMUL).
 * Fix: Modify linker script to include `.bss.*` in `.bss` initialization
 * Confirmed fix via `nm`, `readelf`, waveform debug
 
+**Pipeline Integrating issues**
+* Refer to [issue-record.md](issue-record.md)
+
 ## 4. Summary Tables
 
 ### Functional Highlights
@@ -97,6 +110,4 @@ I adopted `DISTRIBUTED/2`, which passed all direct tests (HELLO, ADDMUL).
 | Aspect              | Description                                                 |
 | ------------------- | ----------------------------------------------------------- |
 | Zfinx integration   | Used x-regs instead of f-regs to reduce hardware complexity |
-| CVFPU configuration | Enabled ADDMUL, DIVSQRT, CONF, CONV, NONCOMP operations     |
-| LSU & reg hazard    | Applied `reg_wf` and forwarding logic to resolve conflicts  |
 | FCSR & Zicsr        | Full support for CSR operations and `fflags`/`frm` control  |
