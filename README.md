@@ -3,6 +3,8 @@
 ## 📌 Summary
 > **This project integrates the Zurich CVFPU into an RV32IM-based SoC to enable the RV32Zfinx extension, improving softmax performance by over 95% compared to software-only execution on RV32IM.**
 
+> **RTL simulation result: ~68% execution time reduction (simulation: ncverilog)**
+
 
 ## Motivation
 While implementing MobileBERT on a resource-limited IoT platform, softmax became a significant performance bottleneck due to its dependence on `exp(x)`, which is costly without floating-point support.  
@@ -10,6 +12,7 @@ This project explores the integration of CVFPU to enable RV32Zfinx, allowing the
 The goal is to validate whether lightweight FPU support can significantly improve AI inference workloads such as softmax on RV32IM-class systems.
 
 ## Results
+**Spike simulation**
 - Input: 512 `float32` values in range `[0, 10)`
 - Target: Spike simulator using RV32IMZf toolchain
 - Measurement: Cycle count via `mcycle` CSR
@@ -18,6 +21,19 @@ The goal is to validate whether lightweight FPU support can significantly improv
 |-------------------------|--------------|----------------------------|------------|----------------|
 | RV32IM (no FPU)         | 1,265,689    | 533,376                    | 57.86%     | 0.0003         |
 | RV32IMZf (with FPU)     | 66,291       | 51,246                     | 22.70%     | 0.0003         |
+
+**RTL simulation:** 
+- Input: 512 `float32` values in range `[0, 10)`
+- Target: ncverilog with RTL design
+- Measurement: Cycle count via `mtime` CSR
+- Compare the execution speed of `expf()` with FPU and without FPU
+
+| Configuration           | glibc expf() | Speedup        |
+|-------------------------|--------------|----------------|
+| RV32IM (no FPU)         | 6,658,844    | -              |
+| RV32IMZf (with FPU)     |  2,077,046   | 68.81%         |
+
+More details and observation of rtl simulation refer to [rtl_evaluation](https://github.com/ytcheng-lab/RV32Zfinx-FPU-Integration-Note/blob/main/doc/rtl_evaluation.md)
 
 ## Observation
 - RV32Zf alone reduces softmax execution time by approximately 95%.
