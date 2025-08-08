@@ -1,0 +1,12 @@
+=======================================================
+Softmax Benchmark: 512 float32 inputs [0, 10)
+Target: RV32IM (no FPU), Measured via mcycle
+Method: Taylor series + LUT
+=======================================================
+=======================================================
+                  Result (without FPU)                 
+=======================================================
+[Baseline]  glibc expf():       1265689 cycles
+[Optimized] Taylor3 + LUT:      533376 cycles
+[Speedup]   57.86% time reduction
+[Accuracy]  Max absolute error: 0.0003

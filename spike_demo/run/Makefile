@@ -15,7 +15,7 @@ build_base:
 	$(RV_GCC) -march=rv32im_zicsr_zicntr -mabi=ilp32 ../src/main.c ../src/algo.c ../src/data.S -I../src -lm -o exp-opt.exe
 
 run:
-	$(SPIKE) --isa=$(ISA) $(PK) exp-opt.exe
+	$(SPIKE) --isa=$(ISA) $(PK) exp-opt.exe | tee run.log
 
 clean:
 	rm -f exp-opt.exe
