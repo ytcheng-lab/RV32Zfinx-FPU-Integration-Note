@@ -1,10 +1,7 @@
 # Lightweight FPU Integration via RV32Zfinx
 
 ## 📌 Summary
-> **This project integrates the Zurich CVFPU into an RV32IM-based SoC to enable the RV32Zfinx extension, improving softmax performance by over 95% compared to software-only execution on RV32IM.**
-
-> **RTL simulation result: ~68% execution time reduction (simulation: ncverilog)**
-
+> **This project integrates the Zurich CVFPU into an RV32IM-based SoC to enable the RV32Zfinx extension, improving softmax performance by ~69% execution cycles in RTL simulation (ncverilog)**
 
 ## Motivation
 While implementing MobileBERT on a resource-limited IoT platform, softmax became a significant performance bottleneck due to its dependence on `exp(x)`, which is costly without floating-point support.  
@@ -36,10 +33,9 @@ The goal is to validate whether lightweight FPU support can significantly improv
 More details and observation of rtl simulation refer to [rtl_evaluation](https://github.com/ytcheng-lab/RV32Zfinx-FPU-Integration-Note/blob/main/doc/rtl_evaluation.md)
 
 ## Observation
-- RV32Zf alone reduces softmax execution time by approximately 95%.
-- Combined with software-level optimization (Taylor3 + LUT), additional 23% improvement is achieved.
-- Spike-based benchmarking confirms substantial instruction-level performance gain.
-- Limitation: Spike does not model real hardware stalls or cache effects; results are functional-cycle estimates.
+- The RV32Zf extension reduces the softmax execution time by approximately 69% when using glibc’s expf() in cycle-accurate RTL simulation.
+- Theoretically, software-level optimization (Taylor-series of order 3 + LUT-based approximation) has the potential to provide an additional ~23% improvement. However, the performance observed in the Spike-based testing environment, which measures instruction-level efficiency, does not directly correlate with the cycle-accurate RTL simulation results.
+- Limitation: Spike does not model real hardware stalls, memory latency, or cache effects; its results represent functional-cycle estimates only.
 
 ## Project Structure
 RV32Zfinx-FPU-Integration-Note/
