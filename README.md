@@ -30,7 +30,7 @@ The goal is to validate whether lightweight FPU support can significantly improv
 | RV32IM (no FPU)         | 6,658,844    | -              |
 | RV32IMZf (with FPU)     |  2,077,046   | 68.81%         |
 
-More details and observation of rtl simulation refer to [rtl_evaluation](https://github.com/ytcheng-lab/RV32Zfinx-FPU-Integration-Note/blob/main/doc/rtl_evaluation.md)
+More details and observation of rtl simulation refer to [rtl_evaluation](https://github.com/ytcheng-lab/RV32Zfinx-FPU-Integration-Note/blob/main/docs/rtl_evaluation.md)
 
 ## Observation
 - The RV32Zf extension reduces the softmax execution time by approximately 69% when using glibc’s expf() in cycle-accurate RTL simulation.
