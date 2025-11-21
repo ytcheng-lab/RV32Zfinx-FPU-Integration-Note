@@ -1,7 +1,7 @@
 # Lightweight FPU Integration via RV32Zfinx
 
 ## 📌 Summary
-> **This project integrates the Zurich CVFPU into an RV32IM-based SoC to enable the RV32Zfinx extension, improving softmax performance by ~69% execution cycles in RTL simulation (ncverilog)**
+> **This project integrates the Zurich CVFPU into an RV32IM-based SoC to enable the RV32Zfinx extension, improving softmax performance by ruducing 69% execution cycles in RTL simulation (ncverilog)**
 
 ## Motivation
 While implementing MobileBERT on a resource-limited IoT platform, softmax became a significant performance bottleneck due to its dependence on `exp(x)`, which is costly without floating-point support.  
@@ -10,14 +10,30 @@ The goal is to validate whether lightweight FPU support can significantly improv
 
 ## Results
 **Spike simulation**
+To evaluate the impact of enabling floating-point instructions (F) as well as the remaining need for approximation-based optimizations, I conducted two Spike-based experiments.
+All tests use:
 - Input: 512 `float32` values in range `[0, 10)`
-- Target: Spike simulator using RV32IMZf toolchain
+- Target: Spike simulator using RV32IMF toolchain
 - Measurement: Cycle count via `mcycle` CSR
 
-| Configuration           | glibc expf() | Optimized (Taylor3 + LUT) | Speedup    | Max Abs Error |
+Experiment 1:
+- Goal: Determine whether the Taylor3+LUT approximation still provides meaningful speedup when F instructions are supported.
+- Observation: Enabling F instructions makes the baseline expf() execution much faster, which reduces the relative benefit of approximation. While approximation is highly effective on RV32IM, its **contribution becomes smaller on RV32IMF** because the FPU already removes most of the bottleneck.
+
+| Configuration           | glibc expf() | Optimized (Taylor3 + LUT) | Cycle Reduction    | Max Abs Error |
 |-------------------------|--------------|----------------------------|------------|----------------|
-| RV32IM (no FPU)         | 1,265,689    | 533,376                    | 57.86%     | 0.0003         |
-| RV32IMZf (with FPU)     | 66,291       | 51,246                     | 22.70%     | 0.0003         |
+| RV32IM (no F)           | 1,265,689    | 533,376                    | 57.86%     | 0.0003         |
+| RV32IMZf (with F)       | 66,291       | 51,246                     | 22.70%     | 0.0003         |
+
+Experiment 2:
+- Goal: Evaluate the direct effect of F instructions on the baseline glibc expf().
+- Observation: With F instructions enabled, Spike simulation shows that expf() becomes **~95% faster** compared with RV32IM software emulation.
+This result highlights the importance of adding floating-point support for workloads dominated by exponential functions.
+
+| Configuration           | glibc expf() | Cycle Reduction  |
+|-------------------------|--------------| -----------|
+| RV32IM (no F)         | 1,265,689    | baseline   |
+| RV32IMZf (with F)     | 66,291       |   95%      |
 
 **RTL simulation:** 
 - Input: 512 `float32` values in range `[0, 10)`
@@ -49,8 +65,8 @@ RV32Zfinx-FPU-Integration-Note/
 To compile and benchmark:
 ```bash
 cd spike_demo/run
-make all                     # Run with RV32IMZf (with FPU)
-make clean build_base run    # Run baseline RV32IM (no FPU)
+make all                     # Run with RV32IMZf (with F instructions)
+make clean build_base run    # Run baseline RV32IM (without F instructions)
 ```
 
 # Documentation
